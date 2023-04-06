@@ -1,25 +1,43 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Tile from '$lib/components/Tile.svelte';
 	import Button from '$lib/components/Button.svelte';
-	import { GameAction } from '$lib/enums/GameAction';
-	import { cashout, game, revealTiles, startGame } from '$lib/stores/GameStore';
 	import Mine from '$lib/components/Icons/Mine.svelte';
 	import Gem from '$lib/components/Icons/Gem.svelte';
+	import { COLUMNS, ROWS } from '$lib/constants';
+	import { GameAction } from '$lib/enums/GameAction';
+	import { cashout, game, revealTiles, startGame } from '$lib/stores/GameStore';
 
-	const ROWS = 5;
-	const COLUMNS = 5;
+	import gemSound from '$lib/sounds/gem.mp3';
+	import mineSound from '$lib/sounds/mine.mp3';
+	import startSound from '$lib/sounds/start.mp3';
+
 	const gridTemplate = `grid-template-columns: repeat(${COLUMNS}, minmax(auto, 80px))`;
-
 	let isButtonLoading = false;
 	let loadingTile: number | null;
+
+	let startAudio: HTMLAudioElement;
+	let gemAudio: HTMLAudioElement;
+	let mineAudio: HTMLAudioElement;
+
+	onMount(() => {
+		startAudio = new Audio(startSound);
+		gemAudio = new Audio(gemSound);
+		mineAudio = new Audio(mineSound);
+	});
 
 	const onButtonClick = async () => {
 		isButtonLoading = true;
 
 		if ($game?.state === 'progress') {
 			await cashout();
-		} else if (!$game || $game?.state === 'busted' || $game?.state === 'cashout') {
+			startAudio.play();
+		} else if ($game?.state === 'busted' || $game?.state === 'cashout') {
 			await startGame();
+			startAudio.play();
+		} else if (!$game) {
+			await startGame();
+			startAudio.play();
 		}
 
 		isButtonLoading = false;
@@ -27,7 +45,10 @@
 
 	const handleTileClick = async (i: number) => {
 		loadingTile = i;
-		if (loadingTile) await revealTiles(i);
+		if (loadingTile) {
+			await revealTiles(i);
+			$game?.state === 'busted' ? mineAudio.play() : gemAudio.play();
+		}
 		loadingTile = null;
 		console.log($game);
 	};

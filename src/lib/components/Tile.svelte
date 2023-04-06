@@ -40,7 +40,7 @@
 
 	.tile:disabled {
 		pointer-events: none;
-		opacity: 0.25;
+		opacity: 0.3;
 	}
 
 	.tile:hover:not([disabled]) {
