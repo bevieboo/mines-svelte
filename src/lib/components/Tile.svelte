@@ -3,10 +3,15 @@
 
 	export let isDisabled = false;
 	export let isLoading = false;
-	export let onClick: () => void;
+	export let isRevealed = false;
 </script>
 
-<button class="tile" on:click|preventDefault={() => onClick()} disabled={isDisabled}>
+<button
+	class="tile"
+	class:tile--revealed={isRevealed}
+	on:click|preventDefault
+	disabled={isDisabled}
+>
 	{#if isLoading}
 		<Spinner />
 	{:else}
@@ -29,6 +34,10 @@
 		transition: ease-out 0.2s;
 	}
 
+	.tile--revealed {
+		pointer-events: none;
+	}
+
 	.tile:disabled {
 		pointer-events: none;
 		opacity: 0.25;
@@ -37,5 +46,10 @@
 	.tile:hover:not([disabled]) {
 		background-color: #557086;
 		transform: translateY(-2px);
+	}
+
+	.tile :global(svg) {
+		width: 80%;
+		height: 80%;
 	}
 </style>

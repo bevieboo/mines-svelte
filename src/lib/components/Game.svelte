@@ -2,7 +2,7 @@
 	import Tile from '$lib/components/Tile.svelte';
 	import Button from '$lib/components/Button.svelte';
 	import { GameAction } from '$lib/enums/GameAction';
-	import { game, revealTiles, startGame } from '$lib/stores/GameStore';
+	import { cashout, game, revealTiles, startGame } from '$lib/stores/GameStore';
 	import Mine from '$lib/components/Icons/Mine.svelte';
 	import Gem from '$lib/components/Icons/Gem.svelte';
 
@@ -15,47 +15,56 @@
 
 	const onButtonClick = async () => {
 		isButtonLoading = true;
-		await startGame();
+
+		if ($game?.state === 'progress') {
+			await cashout();
+		} else if (!$game || $game?.state === 'busted' || $game?.state === 'cashout') {
+			await startGame();
+		}
+
 		isButtonLoading = false;
-		console.log($game);
 	};
 
 	const handleTileClick = async (i: number) => {
 		loadingTile = i;
-		await revealTiles(i);
+		if (loadingTile) await revealTiles(i);
 		loadingTile = null;
 		console.log($game);
-	};
-
-	const getTextForButton = (): string => {
-		if ($game?.state === 'busted') {
-			return GameAction.PlayAgain;
-		}
-		if ($game?.state === 'progress' && $game.revealedTiles.length) {
-			return GameAction.CashOut;
-		}
-
-		return GameAction.Bet;
 	};
 </script>
 
 <div style={gridTemplate} class="game">
 	{#each new Array(ROWS * COLUMNS).fill(null) as tile, i}
-		<Tile onClick={() => handleTileClick(i)} isDisabled={!$game} isLoading={loadingTile === i}>
+		<Tile
+			on:click={() => handleTileClick(i)}
+			isLoading={loadingTile === i}
+			isDisabled={!$game ||
+				(($game?.state === 'busted' || $game?.state === 'cashout') &&
+					!$game.revealedTiles.includes(i))}
+			isRevealed={$game?.state === 'busted' || $game?.revealedTiles.includes(i)}
+		>
 			{#if $game?.mines.includes(i)}
 				<Mine />
-			{:else if $game?.revealedTiles.includes(i)}
+			{:else if $game?.revealedTiles.includes(i) || $game?.state === 'busted' || $game?.state === 'cashout'}
 				<Gem />
 			{/if}
 		</Tile>
 	{/each}
 </div>
+
 <Button
-	onClick={onButtonClick}
+	on:click={onButtonClick}
 	isLoading={isButtonLoading}
 	isDisabled={$game?.state === 'progress' && !$game.revealedTiles.length}
-	text={getTextForButton()}
-/>
+>
+	{#if $game?.state === 'busted' || $game?.state === 'cashout'}
+		{GameAction.PlayAgain}
+	{:else if $game?.state === 'progress' && $game.revealedTiles.length}
+		{GameAction.CashOut}
+	{:else}
+		{GameAction.Bet}
+	{/if}
+</Button>
 
 <style>
 	.game {

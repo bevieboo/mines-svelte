@@ -1,17 +1,15 @@
 <script lang="ts">
 	import Spinner from '$lib/components/Spinner.svelte';
 
-	export let text = 'I am a button';
 	export let isLoading = false;
 	export let isDisabled = false;
-	export let onClick: () => void;
 </script>
 
-<button on:click|preventDefault={() => onClick()} disabled={isDisabled}>
+<button on:click|preventDefault disabled={isDisabled}>
 	{#if isLoading}
 		<Spinner />
 	{:else}
-		{text}
+		<slot />
 	{/if}
 </button>
 
